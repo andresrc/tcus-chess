@@ -17,6 +17,7 @@ package net.derquinse.tcus.chess.solver;
 
 import static com.google.common.collect.Sets.newHashSet;
 import static org.testng.Assert.assertEquals;
+import net.derquinse.tcus.chess.solver.Position.StateBuilder;
 
 import org.testng.annotations.Test;
 
@@ -30,14 +31,18 @@ public final class StateBuilderTest {
 		assertEquals(newHashSet(s), newHashSet(indexes));
 	}
 
+	private static void check(StateBuilder b, Integer... indexes) {
+		check(b.build(), indexes);
+	}
+
 	/** Exercise with simple movements. */
 	@Test
 	public void simple() {
 		final Size size = Size.of(3, 3);
 		final Position p = size.getPosition(1, 1);
-		check(p.builder().build(), 0, 1, 2, 3, 5, 6, 7, 8);
-		check(p.builder().threatenIfPossible(-1, 1).build(), 0, 1, 3, 5, 6, 7, 8);
-		check(p.builder().threatenIfPossible(-1, 1).threatenIfPossible(-1, 5).build(), 0, 1, 3, 5, 6, 7, 8);
+		check(p.builder(), 0, 1, 2, 3, 5, 6, 7, 8);
+		check(p.builder().threatenIfPossible(-1, 1), 0, 1, 3, 5, 6, 7, 8);
+		check(p.builder().threatenIfPossible(-1, 1).threatenIfPossible(-1, 5), 0, 1, 3, 5, 6, 7, 8);
 	}
 
 	/** Exercise with continuous movements. */
@@ -45,9 +50,18 @@ public final class StateBuilderTest {
 	public void continuous() {
 		final Size size = Size.of(4, 4);
 		final Position p = size.getPosition(1, 1);
-		check(p.builder().threatenWhilePossible(1, 0).build(), 0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15);
-		check(p.builder().threatenWhilePossible(1, 0).threatenWhilePossible(-1, 0).build(), 0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15);
-		check(p.builder().threatenWhilePossible(1, 0).threatenWhilePossible(-1, 0).threatenWhilePossible(1, 1).build(), 0, 2, 3, 4, 6, 7, 8, 11, 12, 14);
+		check(p.builder().threatenWhilePossible(1, 0), 0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15);
+		check(p.builder().threatenWhilePossible(1, 0).threatenWhilePossible(-1, 0), 0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15);
+		check(p.builder().threatenWhilePossible(1, 0).threatenWhilePossible(-1, 0).threatenWhilePossible(1, 1), 0, 2, 3, 4,
+				6, 7, 8, 11, 12, 14);
 	}
-	
+
+	/** Knight test. */
+	@Test
+	public void knight() {
+		final Size size = Size.of(4, 4);
+		final Position p = size.getPosition(0, 1);
+		check(Piece.KNIGHT.getState(p), 0, 2, 3, 4, 5, 6, 9, 11, 12, 13, 14, 15);
+	}
+
 }

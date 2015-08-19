@@ -15,10 +15,55 @@
  */
 package net.derquinse.tcus.chess.solver;
 
+import net.derquinse.tcus.chess.solver.Position.StateBuilder;
+
 /**
  * Enumeration representing available pieces.
  * @author Andres Rodriguez
  */
 public enum Piece {
-	KING, QUEEN, BISHOP, ROOK, KNIGHT
+	KING {
+		@Override
+		StateBuilder buildState(StateBuilder b) {
+			return b.threatenIfPossible(-1, 0).threatenIfPossible(-1, 1).threatenIfPossible(0, 1).threatenIfPossible(1, 1)
+					.threatenIfPossible(1, 0).threatenIfPossible(1, -1).threatenIfPossible(0, -1).threatenIfPossible(-1, -1);
+		}
+	},
+	QUEEN {
+		@Override
+		StateBuilder buildState(StateBuilder b) {
+			return b.threatenWhilePossible(-1, 0).threatenWhilePossible(-1, 1).threatenWhilePossible(0, 1)
+					.threatenWhilePossible(1, 1).threatenWhilePossible(1, 0).threatenWhilePossible(1, -1)
+					.threatenWhilePossible(0, -1).threatenWhilePossible(-1, -1);
+		}
+	},
+	BISHOP {
+		@Override
+		StateBuilder buildState(StateBuilder b) {
+			return b.threatenWhilePossible(-1, 1).threatenWhilePossible(1, 1).threatenWhilePossible(1, -1)
+					.threatenWhilePossible(-1, -1);
+		}
+	},
+	ROOK {
+		@Override
+		StateBuilder buildState(StateBuilder b) {
+			return b.threatenWhilePossible(-1, 0).threatenWhilePossible(0, 1).threatenWhilePossible(1, 0)
+					.threatenWhilePossible(0, -1);
+		}
+	},
+	KNIGHT {
+		@Override
+		StateBuilder buildState(StateBuilder b) {
+			return b.threatenIfPossible(-2, -1).threatenIfPossible(-2, 1).threatenIfPossible(-1, 2).threatenIfPossible(1, 2)
+					.threatenIfPossible(2, -1).threatenIfPossible(2, 1).threatenIfPossible(-1, -2).threatenIfPossible(1, -2);
+		}
+	};
+
+	/** Builds the state for a piece in a given position. */
+	final State getState(Position p) {
+		return buildState(p.builder()).build();
+	}
+
+	/** Internal method to build the state. */
+	abstract StateBuilder buildState(StateBuilder b);
 }
