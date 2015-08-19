@@ -22,14 +22,14 @@ import net.derquinse.tcus.chess.solver.Position.StateBuilder;
  * @author Andres Rodriguez
  */
 public enum Piece {
-	KING {
+	KING(4) {
 		@Override
 		StateBuilder buildState(StateBuilder b) {
 			return b.threatenIfPossible(-1, 0).threatenIfPossible(-1, 1).threatenIfPossible(0, 1).threatenIfPossible(1, 1)
 					.threatenIfPossible(1, 0).threatenIfPossible(1, -1).threatenIfPossible(0, -1).threatenIfPossible(-1, -1);
 		}
 	},
-	QUEEN {
+	QUEEN(0) {
 		@Override
 		StateBuilder buildState(StateBuilder b) {
 			return b.threatenWhilePossible(-1, 0).threatenWhilePossible(-1, 1).threatenWhilePossible(0, 1)
@@ -37,27 +37,39 @@ public enum Piece {
 					.threatenWhilePossible(0, -1).threatenWhilePossible(-1, -1);
 		}
 	},
-	BISHOP {
+	BISHOP(1) {
 		@Override
 		StateBuilder buildState(StateBuilder b) {
 			return b.threatenWhilePossible(-1, 1).threatenWhilePossible(1, 1).threatenWhilePossible(1, -1)
 					.threatenWhilePossible(-1, -1);
 		}
 	},
-	ROOK {
+	ROOK(2) {
 		@Override
 		StateBuilder buildState(StateBuilder b) {
 			return b.threatenWhilePossible(-1, 0).threatenWhilePossible(0, 1).threatenWhilePossible(1, 0)
 					.threatenWhilePossible(0, -1);
 		}
 	},
-	KNIGHT {
+	KNIGHT(3) {
 		@Override
 		StateBuilder buildState(StateBuilder b) {
 			return b.threatenIfPossible(-2, -1).threatenIfPossible(-2, 1).threatenIfPossible(-1, 2).threatenIfPossible(1, 2)
 					.threatenIfPossible(2, -1).threatenIfPossible(2, 1).threatenIfPossible(-1, -2).threatenIfPossible(1, -2);
 		}
 	};
+	
+	/** Search order: we start searching by those with grater mobility, in order to indetify invalid paths as soon as possible. */
+	private final int searchOrder;
+	
+	private Piece(int searchOrder) {
+		this.searchOrder = searchOrder;
+	}
+	
+	/** Returns the search order. */
+	final int getSearchOrder() {
+		return searchOrder;
+	}
 
 	/** Builds the state for a piece in a given position. */
 	final State getState(Position p) {

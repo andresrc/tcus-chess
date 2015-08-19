@@ -61,8 +61,14 @@ abstract class State implements Iterable<Integer> {
 		this.size = checkNotNull(size, "The board size must be provided");
 	}
 
+	/** Returns the board size. */
 	final Size getSize() {
 		return size;
+	}
+
+	final int checkIndex(int index) {
+		checkArgument(index >= 0 && index < size.getPositions(), "Index out of range");
+		return index;
 	}
 
 	/**
@@ -78,6 +84,9 @@ abstract class State implements Iterable<Integer> {
 
 	/** Internal merge method. Do not call externally. */
 	abstract Optional<State> doMerge(State other);
+
+	/** Method to check if a position is available. */
+	abstract boolean isAvailable(int index);
 
 	/**
 	 * Empty board state.
@@ -95,6 +104,12 @@ abstract class State implements Iterable<Integer> {
 		@Override
 		Optional<State> doMerge(State other) {
 			return Optional.of(other);
+		}
+
+		@Override
+		boolean isAvailable(int index) {
+			checkIndex(index);
+			return true;
 		}
 	}
 
@@ -132,6 +147,11 @@ abstract class State implements Iterable<Integer> {
 				return Optional.of(of(getSize(), merged));
 			}
 			return Optional.of(this); // the other is empty
+		}
+
+		@Override
+		boolean isAvailable(int index) {
+			return !unavailable.get(checkIndex(index));
 		}
 
 		private final class Availables implements Iterator<Integer> {
