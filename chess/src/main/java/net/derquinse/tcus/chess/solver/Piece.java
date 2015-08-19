@@ -13,20 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.derquinse.tcus.chess;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+package net.derquinse.tcus.chess.solver;
 
 /**
- * Chess Challenge main class.
+ * Enumeration representing available pieces.
  * @author Andres Rodriguez
  */
-public final class ChessChallenge {
-
-	public static void main(String[] args) {
-		// TODO
-		checkNotNull(args);
-		System.out.println("Chess Challenge main method");
-
-	}
+public enum Piece {
+	KING, QUEEN, BISHOP, ROOK, KNIGHT
 }

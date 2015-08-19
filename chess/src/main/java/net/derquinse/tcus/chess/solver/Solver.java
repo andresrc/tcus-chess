@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.derquinse.tcus.chess;
+package net.derquinse.tcus.chess.solver;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import java.util.Set;
 
 /**
- * Chess Challenge main class.
+ * Interface for a challenge solver.
  * @author Andres Rodriguez
  */
-public final class ChessChallenge {
-
-	public static void main(String[] args) {
-		// TODO
-		checkNotNull(args);
-		System.out.println("Chess Challenge main method");
-
-	}
+public interface Solver {
+	/**
+	 * Solves a problem
+	 * @param problem Problem to solve.
+	 * @return The set of found solutions.
+	 */
+	Set<Solution> solve(Problem problem);
 }
