@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 /**
  * Value representing a solver step. Even though is not immutable, it is safely published by the
@@ -41,7 +42,8 @@ final class Step {
 	/** Pending pieces. */
 	private final List<Piece> pieces;
 
-	Step initial(Problem problem) {
+	/** Creates the inital step for a problem. */
+	static Step initial(Problem problem) {
 		checkNotNull(problem, "The problem must be provided");
 		List<Piece> pieces = problem.getPieces().stream().sorted(Comparator.comparing(p -> p.getSearchOrder()))
 				.collect(Collectors.toList());
@@ -87,13 +89,19 @@ final class Step {
 		final Piece next = pieces.get(0);
 		final Position p = state.getSize().getPosition(index);
 		final State pieceState = next.getState(p);
-		final Optional<State> merged = state.merge(pieceState);
-		if (merged.isPresent()) {
+		// The new piece availability must contain all current positions
+		if (positions.isEmpty() || Sets.newHashSet(pieceState).containsAll(positions.keySet())) {
+			final State merged = state.merge(pieceState);
 			Map<Integer, Piece> map = Maps.newHashMap(positions);
 			map.put(index, next);
-			return Optional.of(new Step(merged.get(), map, pieces.subList(1, pieces.size())));
+			return Optional.of(new Step(merged, map, pieces.subList(1, pieces.size())));
 		}
 		return Optional.empty();
+	}
+
+	@Override
+	public String toString() {
+		return String.format("Step[%s][%s][%s]", state, positions, pieces);
 	}
 
 }

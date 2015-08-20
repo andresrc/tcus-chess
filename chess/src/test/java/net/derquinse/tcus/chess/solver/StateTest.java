@@ -24,7 +24,6 @@ import static org.testng.Assert.fail;
 
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Optional;
 import java.util.Set;
 
 import org.testng.annotations.Test;
@@ -107,9 +106,9 @@ public final class StateTest {
 	public void merge() {
 		final Size size = Size.of(7, 8);
 		final State s1 = state(size, 10, 20, 30, 40);
-		final State s2 = state(size, 1, 15, 17, 38);
-		final State s3 = s1.merge(s2).get();
-		final State s4 = s2.merge(s1).get();
+		final State s2 = state(size, 1, 15, 17, 38, 40);
+		final State s3 = s1.merge(s2);
+		final State s4 = s2.merge(s1);
 		final Set<Integer> a3 = newHashSet(s3);
 		final Set<Integer> a4 = newHashSet(s4);
 		assertEquals(a4, a3);
@@ -122,9 +121,9 @@ public final class StateTest {
 		final Size size = Size.of(7, 8);
 		final State state = state(size, 10, 20, 30, 40);
 		final State empty = State.empty(size);
-		assertSame(state.merge(empty).get(), state);
-		assertSame(empty.merge(state).get(), state);
-		assertSame(empty.merge(empty).get(), empty);
+		assertSame(state.merge(empty), state);
+		assertSame(empty.merge(state), state);
+		assertSame(empty.merge(empty), empty);
 	}
 
 	/** Invalid merge. */
@@ -132,26 +131,4 @@ public final class StateTest {
 	public void invalidMerge() {
 		state(Size.of(3, 4), 4, 6).merge(State.empty(Size.of(3, 5)));
 	}
-
-	private static void intersect(State s1, State s2) {
-		assertEquals(s1.merge(s2), Optional.empty());
-		assertEquals(s2.merge(s1), Optional.empty());
-	}
-
-	/** Intersecting merge. */
-	@Test
-	public void intersectingMerge() {
-		final Size size = Size.of(7, 8);
-		final State state1 = state(size, 10, 20, 30, 40);
-		final State state2 = state(size, 1, 2, 30, 4);
-		final State state3 = state(size, 10, 20, 30, 40);
-		final State state4 = state(size, 10, 2, 30, 4);
-		intersect(state1, state2);
-		intersect(state1, state3);
-		intersect(state1, state4);
-		intersect(state2, state3);
-		intersect(state2, state4);
-		intersect(state3, state4);
-	}
-
 }

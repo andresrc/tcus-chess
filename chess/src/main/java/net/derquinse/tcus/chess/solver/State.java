@@ -21,7 +21,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
@@ -45,8 +44,8 @@ abstract class State implements Iterable<Integer> {
 	/**
 	 * Creates a new state.
 	 * @param size Board size.
-	 * @param unavailable Availability set. WARNING: not defensively copied. Must not be used after
-	 *          calling this method.
+	 * @param unavailable Availability set. WARNING: not defensively copied. MUST NOT not be used
+	 *          after calling this method.
 	 * @return the requested state.
 	 */
 	static State of(Size size, BitSet unavailable) {
@@ -72,18 +71,18 @@ abstract class State implements Iterable<Integer> {
 	}
 
 	/**
-	 * Merges two states. States can be merged if their unanavailable positions do not intersect.
-	 * @param other State to merge.
-	 * @return The merged state or empty if they cannot be merged.
+	 * Merges two states. Their unavailability zones are or'd
+	 * @return The merged state.
+	 * @throws IllegalArgumentException if the state to merge is not the same size.
 	 */
-	final Optional<State> merge(State other) {
+	final State merge(State other) {
 		final Size otherSize = checkNotNull(other, "The state to merge must be provided").getSize();
 		checkArgument(size.equals(otherSize), "The state to merge must be of the same size");
 		return doMerge(other);
 	}
 
 	/** Internal merge method. Do not call externally. */
-	abstract Optional<State> doMerge(State other);
+	abstract State doMerge(State other);
 
 	/** Method to check if a position is available. */
 	abstract boolean isAvailable(int index);
@@ -102,14 +101,19 @@ abstract class State implements Iterable<Integer> {
 		}
 
 		@Override
-		Optional<State> doMerge(State other) {
-			return Optional.of(other);
+		State doMerge(State other) {
+			return other;
 		}
 
 		@Override
 		boolean isAvailable(int index) {
 			checkIndex(index);
 			return true;
+		}
+
+		@Override
+		public String toString() {
+			return "EmptyState";
 		}
 	}
 
@@ -136,22 +140,24 @@ abstract class State implements Iterable<Integer> {
 		}
 
 		@Override
-		Optional<State> doMerge(State other) {
+		State doMerge(State other) {
 			if (other instanceof Regular) {
 				final Regular r = (Regular) other;
-				if (unavailable.intersects(r.unavailable)) {
-					return Optional.empty();
-				}
 				BitSet merged = (BitSet) unavailable.clone();
 				merged.or(r.unavailable);
-				return Optional.of(of(getSize(), merged));
+				return of(getSize(), merged);
 			}
-			return Optional.of(this); // the other is empty
+			return this; // the other is empty
 		}
 
 		@Override
 		boolean isAvailable(int index) {
 			return !unavailable.get(checkIndex(index));
+		}
+
+		@Override
+		public String toString() {
+			return String.format("State[%s]", unavailable);
 		}
 
 		private final class Availables implements Iterator<Integer> {
