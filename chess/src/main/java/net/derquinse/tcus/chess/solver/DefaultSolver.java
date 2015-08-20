@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -74,6 +75,13 @@ final class DefaultSolver implements Solver {
 			this.tasks = new ExecutorCompletionService<Integer>(executor);
 		}
 
+		/** Generate new tasks based for a subset of available positions in the current step. */
+		void newTasks(Step step, Predicate<Integer> filter) {
+			step.getAvailable().forEach(i -> {
+				if (filter.test(i)) newTask(step, i); 
+			});
+		}
+
 		/** Generate new tasks based on available positions in the current step. */
 		void newTasks(Step step) {
 			for (int i : step.getAvailable()) {
@@ -93,7 +101,12 @@ final class DefaultSolver implements Solver {
 					if (s.isSolution()) {
 						solutions.add(s.getSolution());
 					} else {
-						newTasks(s);
+						// If we have the same type of piece we only look forward
+						if (step.getNextPiece() == s.getNextPiece()) {
+							newTasks(s, i -> i > index);
+						} else {
+							newTasks(s);
+						}
 					}
 				}
 			}, taskId);

@@ -75,6 +75,15 @@ final class Step {
 	Iterable<Integer> getAvailable() {
 		return state;
 	}
+	
+	/**
+	 * Returns the piece to be used for the next step in the search.
+	 * @throws IllegalStateException if the step is a solution.
+	 */
+	Piece getNextPiece() {
+		checkState(!isSolution(), "Already a solution");
+		return pieces.get(0);
+	}
 
 	/**
 	 * Computes the next step in the search.

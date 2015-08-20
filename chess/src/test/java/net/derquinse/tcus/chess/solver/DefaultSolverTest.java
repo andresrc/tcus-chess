@@ -78,7 +78,7 @@ public final class DefaultSolverTest {
 	}
 	
 	/** Eight queens. */
-	//@Test
+	@Test
 	public void eightQueens() {
 		check(Problem.builder(Size.of(8, 8)).addPieces(Piece.QUEEN, 8), 92);
 	}
