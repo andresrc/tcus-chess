@@ -32,7 +32,7 @@ import com.google.common.collect.Range;
  * not threatened by an existing piece.
  * @author Andres Rodriguez
  */
-abstract class State implements Iterable<Integer> {
+abstract class State implements Iterable<Position> {
 	/** Board size. */
 	private final Size size;
 
@@ -65,6 +65,9 @@ abstract class State implements Iterable<Integer> {
 		return size;
 	}
 
+	/** Return the number of available positions. */
+	abstract int getAvailablePositions();
+
 	final int checkIndex(int index) {
 		checkArgument(index >= 0 && index < size.getPositions(), "Index out of range");
 		return index;
@@ -87,6 +90,34 @@ abstract class State implements Iterable<Integer> {
 	/** Method to check if a position is available. */
 	abstract boolean isAvailable(int index);
 
+	@Override
+	public final Iterator<Position> iterator() {
+		return new PositionIterator(indexIterator());
+	}
+
+	/** Returns an iterator over available indexes. */
+	abstract Iterator<Integer> indexIterator();
+
+	/** Position iterator. */
+	private final class PositionIterator implements Iterator<Position> {
+		/** Available position indexes. */
+		private final Iterator<Integer> indexes;
+
+		PositionIterator(Iterator<Integer> indexes) {
+			this.indexes = indexes;
+		}
+
+		@Override
+		public boolean hasNext() {
+			return indexes.hasNext();
+		}
+
+		@Override
+		public Position next() {
+			return size.getPosition(indexes.next());
+		}
+	}
+
 	/**
 	 * Empty board state.
 	 */
@@ -96,13 +127,18 @@ abstract class State implements Iterable<Integer> {
 		}
 
 		@Override
-		public Iterator<Integer> iterator() {
+		public Iterator<Integer> indexIterator() {
 			return ContiguousSet.create(Range.closedOpen(0, getSize().getPositions()), DiscreteDomain.integers()).iterator();
 		}
 
 		@Override
 		State doMerge(State other) {
 			return other;
+		}
+
+		@Override
+		int getAvailablePositions() {
+			return getSize().getPositions();
 		}
 
 		@Override
@@ -135,7 +171,7 @@ abstract class State implements Iterable<Integer> {
 		}
 
 		@Override
-		public Iterator<Integer> iterator() {
+		public Iterator<Integer> indexIterator() {
 			return new Availables();
 		}
 
@@ -148,6 +184,11 @@ abstract class State implements Iterable<Integer> {
 				return of(getSize(), merged);
 			}
 			return this; // the other is empty
+		}
+
+		@Override
+		int getAvailablePositions() {
+			return getSize().getPositions() - unavailable.cardinality();
 		}
 
 		@Override

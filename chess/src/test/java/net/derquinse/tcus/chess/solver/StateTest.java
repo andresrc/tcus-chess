@@ -41,10 +41,10 @@ public final class StateTest {
 		final Size size = Size.of(7, 8);
 		final State empty = State.empty(size);
 		assertNotNull(empty);
-		Set<Integer> available = Sets.newHashSet(empty);
+		Set<Position> available = Sets.newHashSet(empty);
 		assertEquals(available.size(), 56);
 		for (int i = 0; i < 56; i++) {
-			assertTrue(available.contains(i));
+			assertTrue(available.contains(size.getPosition(i)));
 		}
 	}
 
@@ -78,10 +78,10 @@ public final class StateTest {
 		setBits(set, unavailable);
 		final State regular = State.of(size, set);
 		assertNotNull(regular);
-		Set<Integer> available = newHashSet(regular);
+		Set<Position> available = newHashSet(regular);
 		assertEquals(available.size(), 52);
 		for (int i = 0; i < 56; i++) {
-			assertTrue(available.contains(i) != unavailable.contains(i));
+			assertTrue(available.contains(size.getPosition(i)) != unavailable.contains(i));
 		}
 	}
 
@@ -109,8 +109,8 @@ public final class StateTest {
 		final State s2 = state(size, 1, 15, 17, 38, 40);
 		final State s3 = s1.merge(s2);
 		final State s4 = s2.merge(s1);
-		final Set<Integer> a3 = newHashSet(s3);
-		final Set<Integer> a4 = newHashSet(s4);
+		final Set<Position> a3 = newHashSet(s3);
+		final Set<Position> a4 = newHashSet(s4);
 		assertEquals(a4, a3);
 		assertEquals(a3, Sets.intersection(newHashSet(s1), newHashSet(s2)));
 	}

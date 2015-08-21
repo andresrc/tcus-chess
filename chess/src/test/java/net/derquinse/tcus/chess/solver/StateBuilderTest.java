@@ -17,9 +17,14 @@ package net.derquinse.tcus.chess.solver;
 
 import static com.google.common.collect.Sets.newHashSet;
 import static org.testng.Assert.assertEquals;
+
+import java.util.Set;
+
 import net.derquinse.tcus.chess.solver.Position.StateBuilder;
 
 import org.testng.annotations.Test;
+
+import com.google.common.collect.Sets;
 
 /**
  * Tests for StateBuilder.
@@ -28,7 +33,11 @@ import org.testng.annotations.Test;
 public final class StateBuilderTest {
 
 	private static void check(State s, Integer... indexes) {
-		assertEquals(newHashSet(s), newHashSet(indexes));
+		Set<Position> positions = Sets.newHashSet();
+		for (int i : indexes) {
+			positions.add(s.getSize().getPosition(i));
+		}
+		assertEquals(newHashSet(s), positions);
 	}
 
 	private static void check(StateBuilder b, Integer... indexes) {

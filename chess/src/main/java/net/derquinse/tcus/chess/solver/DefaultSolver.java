@@ -18,15 +18,14 @@ package net.derquinse.tcus.chess.solver;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -58,12 +57,14 @@ final class DefaultSolver implements Solver {
 		}
 		final Step initial = Step.initial(problem);
 		final Search search = new Search();
-		search.newTasks(initial);
+		search.newTask(initial);
 		search.await();
 		return ImmutableSet.copyOf(search.solutions);
 	}
 
 	private final class Search {
+		/** Visited steps. */
+		private final Set<Step.Key> visited = Sets.newConcurrentHashSet();
 		/** Solutions so far. */
 		private final Set<Solution> solutions = Sets.newConcurrentHashSet();
 		/** Completion service. */
@@ -75,54 +76,52 @@ final class DefaultSolver implements Solver {
 			this.tasks = new ExecutorCompletionService<Integer>(executor);
 		}
 
-		/** Generate new tasks based for a subset of available positions in the current step. */
-		void newTasks(Step step, Predicate<Integer> filter) {
-			step.getAvailable().forEach(i -> {
-				if (filter.test(i)) newTask(step, i); 
-			});
-		}
-
-		/** Generate new tasks based on available positions in the current step. */
-		void newTasks(Step step) {
-			for (int i : step.getAvailable()) {
-				newTask(step, i);
-			}
-		}
-
-		/** Generate a new task for an available position in the current step. */
-		private void newTask(final Step step, final int index) {
-			final int taskId = count.incrementAndGet();
-			//System.out.printf("Submitted task (%d):%s[%d]\n", taskId, step, index);
-			tasks.submit(() -> {
-				final Optional<Step> next = step.next(index);
-				//System.out.printf("Task [%d]: %s(%d) -> %s\n", taskId, step, index, next);
-				if (next.isPresent()) {
-					Step s = next.get();
-					if (s.isSolution()) {
-						solutions.add(s.getSolution());
-					} else {
-						// If we have the same type of piece we only look forward
-						if (step.getNextPiece() == s.getNextPiece()) {
-							newTasks(s, i -> i > index);
-						} else {
-							newTasks(s);
-						}
-					}
+		/** Generate a new task to process a non-final step. */
+		void newTask(final Step step) {
+			if (visited.add(step.getKey())) {
+				final Task task = new Task(step);
+				if (task.id < 11 || task.id % 10000 == 0) {
+					System.out.printf("Submitted task (%d) : %s\n", task.id, step);
 				}
-			}, taskId);
+				tasks.submit(task);
+			}
 		}
 
 		/** Awaits for the solution. */
 		@SuppressWarnings("unused")
 		void await() {
+			int taken = 0;
 			try {
-				while (count.get() > 0) {
+				while (taken < count.get()) {
 					final Future<Integer> id = tasks.take();
-					final int current = count.decrementAndGet();
-					// System.out.printf("Taken task [%d], %d left\n", id.get(), current);
+					taken++;
 				}
 			} catch (Exception e) {
 				throw new RuntimeException(e);
+			}
+		}
+
+		private final class Task implements Callable<Integer> {
+			/** Task id. */
+			private final int id = count.incrementAndGet();
+			/** Step to process. */
+			private final Step step;
+
+			Task(Step step) {
+				this.step = step;
+			}
+
+			@Override
+			public Integer call() throws Exception {
+				for (Step next : step.nextSteps()) {
+					//System.out.printf("Task [%d]: %s -> %s\n", id, step, next);
+					if (next.isSolution()) {
+						solutions.add(next.getSolution());
+					} else {
+						newTask(next);
+					}
+				}
+				return id;
 			}
 		}
 
