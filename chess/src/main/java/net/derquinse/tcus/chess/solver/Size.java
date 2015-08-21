@@ -17,6 +17,10 @@ package net.derquinse.tcus.chess.solver;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.function.Function;
+
+import com.google.common.base.MoreObjects;
+
 /**
  * Immutable value representing a board size.
  * @author Andres Rodriguez
@@ -26,7 +30,7 @@ public final class Size {
 	private final int rows;
 	/** Number of columns. */
 	private final int columns;
-	
+
 	/** Returns a Size object with the provided numbers of rows and columns. */
 	public static Size of(int rows, int columns) {
 		return new Size(rows, columns);
@@ -49,12 +53,12 @@ public final class Size {
 	public int getColumns() {
 		return columns;
 	}
-	
+
 	/** Returns the numbers of positions. */
 	public int getPositions() {
-		return rows*columns;
+		return rows * columns;
 	}
-	
+
 	/** Returns the position with the provided index. */
 	Position getPosition(int index) {
 		return new Position(this, index);
@@ -64,7 +68,7 @@ public final class Size {
 	Position getPosition(int row, int column) {
 		return new Position(this, row, column);
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return 31 * rows + columns;
@@ -78,10 +82,47 @@ public final class Size {
 		}
 		return false;
 	}
-	
+
 	@Override
 	public String toString() {
 		return String.format("Size(%d,%d)", rows, columns);
+	}
+
+	/**
+	 * Draws a board
+	 * @param b Builder to add the drawing to.
+	 * @param contents Board contents.
+	 * @return The provided builder for method chaining.
+	 */
+	public StringBuilder draw(StringBuilder b, Function<Position, Character> contents) {
+		final String line = getRowLine();
+		b.append(line);
+		for (int r = 0; r < rows; r++) {
+			b.append('|');
+			for (int c = 0; c < columns; c++) {
+				final Position p = getPosition(r, c);
+				final char ch = MoreObjects.firstNonNull(contents.apply(p), ' ');
+				b.append(ch).append('|');
+			}
+			b.append('\n').append(line);
+		}
+		return b;
+	}
+
+	/**
+	 * Draws a board
+	 * @param contents Board contents.
+	 */
+	public String draw(Function<Position, Character> contents) {
+		return draw(new StringBuilder(), contents).toString();
+	}
+
+	private String getRowLine() {
+		StringBuilder b = new StringBuilder().append('+');
+		for (int i = 0; i < columns; i++) {
+			b.append("-+");
+		}
+		return b.append('\n').toString();
 	}
 
 }

@@ -61,19 +61,41 @@ public final class Solution {
 	public ImmutableMap<Integer, Piece> getPositions() {
 		return positions;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return hash;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof Solution) {
-			Solution other = (Solution)obj;
+			Solution other = (Solution) obj;
 			return hash == other.hash && size.equals(other.size) && positions.equals(other.positions);
 		}
 		return false;
+	}
+
+	/**
+	 * Draws a board containing a solution.
+	 * @param b Builder to add the drawing to.
+	 * @return The provided builder for method chaining.
+	 */
+	public StringBuilder draw(StringBuilder b) {
+		return size.draw(b, p -> {
+			int i = p.getIndex();
+			if (positions.containsKey(i)) {
+				return positions.get(i).getRepresentation();
+			}
+			return null;
+		});
+	}
+
+	/**
+	 * Draws a board containing a solution.
+	 */
+	public String draw() {
+		return draw(new StringBuilder()).toString();
 	}
 
 }

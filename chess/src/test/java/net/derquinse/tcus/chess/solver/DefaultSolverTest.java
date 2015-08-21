@@ -28,13 +28,14 @@ import org.testng.annotations.Test;
 public final class DefaultSolverTest {
 	private final DefaultSolver solver = new DefaultSolver(2);
 
-	private void check(Problem p, int expectedSolutions) {
+	private Set<Solution> check(Problem p, int expectedSolutions) {
 		Set<Solution> solutions = solver.solve(p);
 		assertEquals(solutions.size(), expectedSolutions);
+		return solutions;
 	}
 
-	private void check(Problem.Builder b, int expectedSolutions) {
-		check(b.build(), expectedSolutions);
+	private Set<Solution> check(Problem.Builder b, int expectedSolutions) {
+		return check(b.build(), expectedSolutions);
 	}
 
 	/** Base case. */
@@ -46,13 +47,17 @@ public final class DefaultSolverTest {
 	/** Example 1. */
 	@Test
 	public void example1() {
-		check(Problem.builder(Size.of(3, 3)).addPieces(Piece.KING, 2).addPieces(Piece.ROOK, 1), 4);
+		for(Solution s: check(Problem.builder(Size.of(3, 3)).addPieces(Piece.KING, 2).addPieces(Piece.ROOK, 1), 4)) {
+			System.out.println(s.draw());
+		}
 	}
 
 	/** Example 2. */
 	@Test
 	public void example2() {
-		check(Problem.builder(Size.of(4, 4)).addPieces(Piece.KNIGHT, 4).addPieces(Piece.ROOK, 2), 8);
+		for(Solution s: check(Problem.builder(Size.of(4, 4)).addPieces(Piece.KNIGHT, 4).addPieces(Piece.ROOK, 2), 8)) {
+			System.out.println(s.draw());
+		}
 	}
 	
 	private void queens(int n, int sols) {
@@ -84,7 +89,7 @@ public final class DefaultSolverTest {
 	}
 
 	/** Challenge. */
-	@Test
+	//@Test
 	public void challenge() {
 		check(Problem.builder(Size.of(7, 7)).addPieces(Piece.KING, 2).addPieces(Piece.QUEEN, 2).addPieces(Piece.BISHOP, 2).addPieces(Piece.KNIGHT, 1), 1);
 	}

@@ -33,6 +33,7 @@ public final class SizeTest {
 		assertEquals(size.getRows(), 5);
 		assertEquals(size.getColumns(), 9);
 		assertEquals(size.getPositions(), 45);
+		System.out.println(size.draw(p -> null));
 	}
 
 	/** Checks valid arguments. */

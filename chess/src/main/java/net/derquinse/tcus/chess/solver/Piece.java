@@ -22,14 +22,14 @@ import net.derquinse.tcus.chess.solver.Position.StateBuilder;
  * @author Andres Rodriguez
  */
 public enum Piece {
-	KING(4) {
+	KING(4, 'K') {
 		@Override
 		StateBuilder buildState(StateBuilder b) {
 			return b.threatenIfPossible(-1, 0).threatenIfPossible(-1, 1).threatenIfPossible(0, 1).threatenIfPossible(1, 1)
 					.threatenIfPossible(1, 0).threatenIfPossible(1, -1).threatenIfPossible(0, -1).threatenIfPossible(-1, -1);
 		}
 	},
-	QUEEN(0) {
+	QUEEN(0, 'Q') {
 		@Override
 		StateBuilder buildState(StateBuilder b) {
 			return b.threatenWhilePossible(-1, 0).threatenWhilePossible(-1, 1).threatenWhilePossible(0, 1)
@@ -37,21 +37,21 @@ public enum Piece {
 					.threatenWhilePossible(0, -1).threatenWhilePossible(-1, -1);
 		}
 	},
-	BISHOP(1) {
+	BISHOP(1, 'B') {
 		@Override
 		StateBuilder buildState(StateBuilder b) {
 			return b.threatenWhilePossible(-1, 1).threatenWhilePossible(1, 1).threatenWhilePossible(1, -1)
 					.threatenWhilePossible(-1, -1);
 		}
 	},
-	ROOK(2) {
+	ROOK(2, 'R') {
 		@Override
 		StateBuilder buildState(StateBuilder b) {
 			return b.threatenWhilePossible(-1, 0).threatenWhilePossible(0, 1).threatenWhilePossible(1, 0)
 					.threatenWhilePossible(0, -1);
 		}
 	},
-	KNIGHT(3) {
+	KNIGHT(3, 'N') {
 		@Override
 		StateBuilder buildState(StateBuilder b) {
 			return b.threatenIfPossible(-2, -1).threatenIfPossible(-2, 1).threatenIfPossible(-1, 2).threatenIfPossible(1, 2)
@@ -61,14 +61,22 @@ public enum Piece {
 	
 	/** Search order: we start searching by those with grater mobility, in order to indetify invalid paths as soon as possible. */
 	private final int searchOrder;
+	/** Representation. */
+	private final char representation;
 	
-	private Piece(int searchOrder) {
+	private Piece(int searchOrder, char representation) {
 		this.searchOrder = searchOrder;
+		this.representation = representation;
 	}
 	
 	/** Returns the search order. */
 	final int getSearchOrder() {
 		return searchOrder;
+	}
+	
+	/** Returns the character used in representations. */
+	final char getRepresentation() {
+		return representation;
 	}
 
 	/** Builds the state for a piece in a given position. */
