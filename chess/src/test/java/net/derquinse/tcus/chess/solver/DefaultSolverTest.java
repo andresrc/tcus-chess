@@ -26,7 +26,7 @@ import org.testng.annotations.Test;
  * @author Andres Rodriguez
  */
 public final class DefaultSolverTest {
-	private final DefaultSolver solver = new DefaultSolver(1);
+	private final DefaultSolver solver = new DefaultSolver(2);
 
 	private void check(Problem p, int expectedSolutions) {
 		Set<Solution> solutions = solver.solve(p);
@@ -78,14 +78,13 @@ public final class DefaultSolverTest {
 	}
 	
 	/** Eight queens. */
-	//@Test
+	@Test
 	public void eightQueens() {
 		check(Problem.builder(Size.of(8, 8)).addPieces(Piece.QUEEN, 8), 92);
 	}
 
-
 	/** Challenge. */
-	//@Test
+	@Test
 	public void challenge() {
 		check(Problem.builder(Size.of(7, 7)).addPieces(Piece.KING, 2).addPieces(Piece.QUEEN, 2).addPieces(Piece.BISHOP, 2).addPieces(Piece.KNIGHT, 1), 1);
 	}

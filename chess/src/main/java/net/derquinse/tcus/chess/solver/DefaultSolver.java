@@ -63,8 +63,6 @@ final class DefaultSolver implements Solver {
 	}
 
 	private final class Search {
-		/** Visited steps. */
-		private final Set<Step.Key> visited = Sets.newConcurrentHashSet();
 		/** Solutions so far. */
 		private final Set<Solution> solutions = Sets.newConcurrentHashSet();
 		/** Completion service. */
@@ -78,13 +76,9 @@ final class DefaultSolver implements Solver {
 
 		/** Generate a new task to process a non-final step. */
 		void newTask(final Step step) {
-			if (visited.add(step.getKey())) {
-				final Task task = new Task(step);
-				if (task.id < 11 || task.id % 10000 == 0) {
-					System.out.printf("Submitted task (%d) : %s\n", task.id, step);
-				}
-				tasks.submit(task);
-			}
+			final Task task = new Task(step);
+			System.out.printf("Submitted task (%d) : %s\n", task.id, step);
+			tasks.submit(task);
 		}
 
 		/** Awaits for the solution. */
@@ -95,6 +89,7 @@ final class DefaultSolver implements Solver {
 				while (taken < count.get()) {
 					final Future<Integer> id = tasks.take();
 					taken++;
+					System.out.printf("Completed task (%d)\n", id.get());
 				}
 			} catch (Exception e) {
 				throw new RuntimeException(e);
@@ -114,7 +109,6 @@ final class DefaultSolver implements Solver {
 			@Override
 			public Integer call() throws Exception {
 				for (Step next : step.nextSteps()) {
-					//System.out.printf("Task [%d]: %s -> %s\n", id, step, next);
 					if (next.isSolution()) {
 						solutions.add(next.getSolution());
 					} else {

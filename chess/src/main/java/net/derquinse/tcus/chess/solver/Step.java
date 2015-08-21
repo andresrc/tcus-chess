@@ -35,34 +35,38 @@ import com.google.common.collect.Lists;
 final class Step {
 	/** Problem pieces. */
 	private final ImmutableList<Piece> pieces;
-	/** Current state. */
+	/** Current board state. */
 	private final State state;
-	/** Step key. */
-	private final Key key;
+	/** Placed pieces positions. */
+	private final int[] positions;
 
 	/** Creates the inital step for a problem. */
 	static Step initial(Problem problem) {
 		checkNotNull(problem, "The problem must be provided");
 		List<Piece> pieces = problem.getPieces().stream().sorted(Comparator.comparing(p -> p.getSearchOrder()))
 				.collect(Collectors.toList());
-		return new Step(ImmutableList.copyOf(pieces), State.empty(problem.getSize()), new Key());
+		return new Step(ImmutableList.copyOf(pieces), State.empty(problem.getSize()));
 	}
 
-	/** Constructor. */
-	private Step(ImmutableList<Piece> pieces, State state, Key key) {
+	/** Constructor for initial state. */
+	private Step(ImmutableList<Piece> pieces, State state) {
 		this.pieces = pieces;
 		this.state = state;
-		this.key = key;
+		this.positions = new int[0];
 	}
 
-	/** Returns the step key, to control visited steps. */
-	Key getKey() {
-		return key;
+	/** Constructor for incremental step. */
+	private Step(Step current, Position p, State s) {
+		this.pieces = current.pieces;
+		this.state = current.state.merge(s);
+		int n = current.positions.length;
+		this.positions = Arrays.copyOf(current.positions, n + 1);
+		this.positions[n] = p.getIndex();
 	}
 
 	/** Returns whether this step represents a solution. */
 	boolean isSolution() {
-		return key.positions.length == pieces.size();
+		return positions.length == pieces.size();
 	}
 
 	/**
@@ -73,9 +77,18 @@ final class Step {
 		checkState(isSolution(), "Not a solution");
 		ImmutableMap.Builder<Integer, Piece> b = ImmutableMap.builder();
 		for (int i = 0; i < pieces.size(); i++) {
-			b.put(key.positions[i], pieces.get(i));
+			b.put(positions[i], pieces.get(i));
 		}
 		return Solution.of(state.getSize(), b.build());
+	}
+
+	/**
+	 * Returns the last piece placed on the board.
+	 * @throws IllegalStateException if the step is an initial step.
+	 */
+	private Piece getLastPiece() {
+		checkState(positions.length > 0, "Initial state");
+		return pieces.get(positions.length - 1);
 	}
 
 	/**
@@ -84,7 +97,7 @@ final class Step {
 	 */
 	private Piece getNextPiece() {
 		checkState(!isSolution(), "Already a solution");
-		return pieces.get(key.positions.length);
+		return pieces.get(positions.length);
 	}
 
 	/**
@@ -94,29 +107,36 @@ final class Step {
 	 *         path must end.
 	 * @throws IllegalStateException if the step is a solution.
 	 */
-	Iterable<Step> nextSteps() {
-		checkState(!isSolution(), "Already a solution");
+	List<Step> nextSteps() {
+		if (isSolution()) {
+			return ImmutableList.of(this);
+		}
 		// Available positions
 		final int n = state.getAvailablePositions();
-		if (n < pieces.size() - key.positions.length) {
-			//System.out.printf("No room left in state %s\n", this);
+		if (n < 1 || n < pieces.size() - positions.length) {
+			// No room left for remaining pieces
 			return ImmutableList.of();
 		}
-		final List<Step> steps = Lists.newArrayListWithCapacity(n);
-		final Piece next = getNextPiece();
+		final List<Step> steps = Lists.newLinkedList();
+		final Piece nextPiece = getNextPiece();
 		// Initial state
-		if (key.positions.length == 0) {
+		if (positions.length == 0) {
 			// All positions are available
 			for (Position p : state) {
-				final State pieceState = next.getState(p);
-				steps.add(new Step(pieces, pieceState, new Key(key, pieces, p.getIndex())));
+				final State pieceState = nextPiece.getState(p);
+				steps.add(new Step(this, p, pieceState));
 			}
 		} else {
+			final boolean samePiece = nextPiece.equals(getLastPiece());
+			final int lastPos = positions[positions.length-1];
 			for (Position p : state) {
-				final State pieceState = next.getState(p);
-				if (validState(pieceState)) {
-					final State merged = state.merge(pieceState);
-					steps.add(new Step(pieces, merged, new Key(key, pieces, p.getIndex())));
+				// Optimization: if two pieces are the same kind, only look forward
+				if (!samePiece || p.getIndex() > lastPos) {
+					final State pieceState = nextPiece.getState(p);
+					if (validState(pieceState)) {
+						final Step next = new Step(this, p, pieceState);
+						steps.addAll(next.nextSteps());
+					}
 				}
 			}
 		}
@@ -125,7 +145,7 @@ final class Step {
 
 	/** Checks that the provided state does not threaten any of the current step positions. */
 	private boolean validState(State s) {
-		for (int p : key.positions) {
+		for (int p : positions) {
 			if (!s.isAvailable(p)) {
 				return false;
 			}
@@ -135,50 +155,8 @@ final class Step {
 
 	@Override
 	public String toString() {
-		return String.format("Step[%s]%s[%s]", state, Arrays.toString(key.positions),
-				pieces.subList(key.positions.length, pieces.size()));
-	}
-
-	static final class Key {
-		/** Placed pieces positions. */
-		private final int[] positions;
-		/** Hash code (precalculated). */
-		private final int hash;
-
-		/** Constructor for an initial key. */
-		private Key() {
-			this.positions = new int[0];
-			this.hash = Arrays.hashCode(positions);
-		}
-
-		/** Constructor for a derived key. */
-		private Key(Key key, List<Piece> pieces, int nextPosition) {
-			int n = key.positions.length;
-			this.positions = Arrays.copyOf(key.positions, n + 1);
-			this.positions[n] = nextPosition;
-			// To make equivalent steps have equal keys, we order the positions for pieces of the same kind
-			while (n > 0 && pieces.get(n) == pieces.get(n-1) && positions[n] < positions[n-1]) {
-				int t = positions[n];
-				positions[n] = positions[n-1];
-				positions[n-1] = t;
-				n--;						
-			}
-			this.hash = Arrays.hashCode(positions);
-		}
-
-		@Override
-		public int hashCode() {
-			return hash;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (obj instanceof Key) {
-				final Key other = (Key) obj;
-				return hash == other.hash && Arrays.equals(positions, other.positions);
-			}
-			return false;
-		}
+		return String.format("Step[%s]%s[%s]", state, Arrays.toString(positions),
+				pieces.subList(positions.length, pieces.size()));
 	}
 
 }
