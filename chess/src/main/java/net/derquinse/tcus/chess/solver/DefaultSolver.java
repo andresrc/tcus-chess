@@ -77,19 +77,19 @@ final class DefaultSolver implements Solver {
 		/** Generate a new task to process a non-final step. */
 		void newTask(final Step step) {
 			final Task task = new Task(step);
-			System.out.printf("Submitted task (%d) : %s\n", task.id, step);
+			//System.out.printf("Submitted task (%d) : %s\n", task.id, step);
 			tasks.submit(task);
 		}
 
 		/** Awaits for the solution. */
-		@SuppressWarnings("unused")
 		void await() {
 			int taken = 0;
 			try {
 				while (taken < count.get()) {
+					@SuppressWarnings("unused")
 					final Future<Integer> id = tasks.take();
 					taken++;
-					System.out.printf("Completed task (%d)\n", id.get());
+					//System.out.printf("Completed task (%d)\n", id.get());
 				}
 			} catch (Exception e) {
 				throw new RuntimeException(e);

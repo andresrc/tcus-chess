@@ -26,26 +26,35 @@ import java.util.Objects;
  * Immutable value representing a position in a board of a certain size..
  * @author Andres Rodriguez
  */
-public final class Position {
+public final class Position implements Comparable<Position> {
 	/** Board size. */
 	private final Size size;
 	/** Position index in the board (row-based). */
 	private final int index;
+	/** Row coordinate. Calculated, not part of state. */
+	private final int row;
+	/** Column coordinate. Calculated, not part of state. */
+	private final int column;
 
 	/** 2-D Constructor. */
 	Position(Size size, int row, int column) {
 		this.size = checkNotNull(size, "The size must be provided");
-		checkArgument(row >= 0 && row < size.getRows(), "Illegal row number %d for %s", row, size);
-		checkArgument(column >= 0 && column < size.getColumns(), "Illegal row number %d for %s", row, size);
-		checkArgument(column >= 0 && column < size.getColumns(), "Illegal column number %d for %s", row, size);
+		this.row = size.checkRow(row);
+		this.column = size.checkColumn(column);
 		this.index = row * size.getColumns() + column;
 	}
 
 	/** 1-D Constructor. */
 	Position(Size size, int index) {
 		this.size = checkNotNull(size, "The size must be provided");
-		checkArgument(index >= 0 && index < size.getPositions(), "Illegal index %d for %s", index, size);
-		this.index = index;
+		this.index = size.checkIndex(index);
+		this.row = index / size.getColumns();
+		this.column = index % size.getColumns();
+	}
+
+	/** The size is position is referenced to. */
+	public Size getSize() {
+		return size;
 	}
 
 	/** Returns the position as an index in the board. */
@@ -55,12 +64,12 @@ public final class Position {
 
 	/** Returns the row coordinate. */
 	public int getRow() {
-		return index / size.getColumns();
+		return row;
 	}
 
 	/** Returns the column coordinate. */
 	public int getColumn() {
-		return index % size.getColumns();
+		return column;
 	}
 
 	/** Creates a state builder based on the current position. */
@@ -83,13 +92,19 @@ public final class Position {
 	}
 
 	@Override
+	public int compareTo(Position o) {
+		checkArgument(size.equals(o.size), "Position sizes must be equal to be compared");
+		return index - o.index;
+	}
+
+	@Override
 	public String toString() {
-		return String.format("Position[%d](%d,%d)-of-%s", index, getRow(), getColumn(), size);
+		return String.format("Position[%d](%d,%d)-of-%s", index, row, column, size);
 	}
 
 	/**
-	 * Class used by pieces to build their state starting from the current position.
-	 * All threaten operations are independent and start from the piece position.
+	 * Class used by pieces to build their state starting from the current position. All threaten
+	 * operations are independent and start from the piece position.
 	 */
 	final class StateBuilder {
 		private final BitSet bitSet = new BitSet();
@@ -115,7 +130,7 @@ public final class Position {
 			return null;
 		}
 
-		/** Virtually threaten and if the resulting position is inside the board mark as unavailable. */
+		/** Virtually threaten if the resulting position is inside the board. */
 		StateBuilder threatenIfPossible(int nRows, int nColumns) {
 			Integer index = delta(1, nRows, nColumns);
 			if (index != null) {
@@ -124,7 +139,7 @@ public final class Position {
 			return this;
 		}
 
-		/** Virtually threaten and while the resulting position is inside the board mark as unavailable. */
+		/** Virtually threaten while the resulting position is inside the board mark. */
 		StateBuilder threatenWhilePossible(int nRows, int nColumns) {
 			for (int steps = 1;; steps++) {
 				Integer index = delta(steps, nRows, nColumns);

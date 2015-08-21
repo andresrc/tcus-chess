@@ -21,6 +21,8 @@ import static org.testng.Assert.assertNotNull;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import com.google.common.collect.Sets;
+
 /**
  * Tests for Size.
  * @author Andres Rodriguez
@@ -33,6 +35,7 @@ public final class SizeTest {
 		assertEquals(size.getRows(), 5);
 		assertEquals(size.getColumns(), 9);
 		assertEquals(size.getPositions(), 45);
+		assertEquals(Sets.newHashSet(size).size(), 45);
 		System.out.println(size.draw(p -> null));
 	}
 

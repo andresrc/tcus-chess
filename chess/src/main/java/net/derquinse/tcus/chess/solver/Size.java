@@ -17,19 +17,23 @@ package net.derquinse.tcus.chess.solver;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.function.Function;
 
 import com.google.common.base.MoreObjects;
 
 /**
- * Immutable value representing a board size.
+ * Immutable value representing a board size. Iterable through the available positions.
  * @author Andres Rodriguez
  */
-public final class Size {
+public final class Size implements Iterable<Position> {
 	/** Number of rows. */
 	private final int rows;
 	/** Number of columns. */
 	private final int columns;
+	/** Number of positions. Calculated, not part of the object's state. */
+	private final int positions;
 
 	/** Returns a Size object with the provided numbers of rows and columns. */
 	public static Size of(int rows, int columns) {
@@ -42,6 +46,7 @@ public final class Size {
 		checkArgument(columns > 0, "The number of columns must be > 0");
 		this.rows = rows;
 		this.columns = columns;
+		this.positions = rows * columns;
 	}
 
 	/** Returns the number of rows. */
@@ -56,7 +61,52 @@ public final class Size {
 
 	/** Returns the numbers of positions. */
 	public int getPositions() {
-		return rows * columns;
+		return positions;
+	}
+
+	/** Returns whether an index is valid. */
+	boolean isIndex(int index) {
+		return index >= 0 && index < positions;
+	}
+
+	/**
+	 * Ensures an index is valid.
+	 * @return The provided argument.
+	 * @throws IllegalArgumentException if invalid.
+	 */
+	int checkIndex(int index) {
+		checkArgument(isIndex(index), "Invalid index for size %s", this);
+		return index;
+	}
+
+	/** Returns whether a row number is valid. */
+	boolean isRow(int row) {
+		return row >= 0 && row < rows;
+	}
+
+	/**
+	 * Ensures a row number is valid.
+	 * @return The provided argument.
+	 * @throws IllegalArgumentException if invalid.
+	 */
+	int checkRow(int row) {
+		checkArgument(isRow(row), "Invalid row for size %s", this);
+		return row;
+	}
+
+	/** Returns whether a column number is valid. */
+	boolean isColumn(int column) {
+		return column >= 0 && column < columns;
+	}
+
+	/**
+	 * Ensures a column number is valid.
+	 * @return The provided argument.
+	 * @throws IllegalArgumentException if invalid.
+	 */
+	int checkColumn(int column) {
+		checkArgument(isColumn(column), "Invalid column for size %s", this);
+		return column;
 	}
 
 	/** Returns the position with the provided index. */
@@ -67,6 +117,11 @@ public final class Size {
 	/** Returns the position with the provided row and column values. */
 	Position getPosition(int row, int column) {
 		return new Position(this, row, column);
+	}
+
+	@Override
+	public Iterator<Position> iterator() {
+		return new PositionIterator();
 	}
 
 	@Override
@@ -123,6 +178,30 @@ public final class Size {
 			b.append("-+");
 		}
 		return b.append('\n').toString();
+	}
+
+	/** Position Iterator. */
+	private final class PositionIterator implements Iterator<Position> {
+		private int index = 0;
+
+		/** Constructor. */
+		private PositionIterator() {
+		}
+
+		@Override
+		public boolean hasNext() {
+			return index < positions;
+		}
+
+		@Override
+		public Position next() {
+			if (!hasNext()) {
+				throw new NoSuchElementException();
+			}
+			final Position p = getPosition(index);
+			index++;
+			return p;
+		}
 	}
 
 }

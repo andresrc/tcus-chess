@@ -22,10 +22,6 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import com.google.common.collect.ContiguousSet;
-import com.google.common.collect.DiscreteDomain;
-import com.google.common.collect.Range;
-
 /**
  * Immutable value representing a board state. A board state is defined by the the of available
  * positions (which can be iterated), that are those that are not occupied by another piece and are
@@ -68,11 +64,6 @@ abstract class State implements Iterable<Position> {
 	/** Return the number of available positions. */
 	abstract int getAvailablePositions();
 
-	final int checkIndex(int index) {
-		checkArgument(index >= 0 && index < size.getPositions(), "Index out of range");
-		return index;
-	}
-
 	/**
 	 * Merges two states. Their unavailability zones are or'd
 	 * @return The merged state.
@@ -88,35 +79,7 @@ abstract class State implements Iterable<Position> {
 	abstract State doMerge(State other);
 
 	/** Method to check if a position is available. */
-	abstract boolean isAvailable(int index);
-
-	@Override
-	public final Iterator<Position> iterator() {
-		return new PositionIterator(indexIterator());
-	}
-
-	/** Returns an iterator over available indexes. */
-	abstract Iterator<Integer> indexIterator();
-
-	/** Position iterator. */
-	private final class PositionIterator implements Iterator<Position> {
-		/** Available position indexes. */
-		private final Iterator<Integer> indexes;
-
-		PositionIterator(Iterator<Integer> indexes) {
-			this.indexes = indexes;
-		}
-
-		@Override
-		public boolean hasNext() {
-			return indexes.hasNext();
-		}
-
-		@Override
-		public Position next() {
-			return size.getPosition(indexes.next());
-		}
-	}
+	abstract boolean isAvailable(Position p);
 
 	/**
 	 * Empty board state.
@@ -127,8 +90,8 @@ abstract class State implements Iterable<Position> {
 		}
 
 		@Override
-		public Iterator<Integer> indexIterator() {
-			return ContiguousSet.create(Range.closedOpen(0, getSize().getPositions()), DiscreteDomain.integers()).iterator();
+		public Iterator<Position> iterator() {
+			return getSize().iterator();
 		}
 
 		@Override
@@ -142,8 +105,7 @@ abstract class State implements Iterable<Position> {
 		}
 
 		@Override
-		boolean isAvailable(int index) {
-			checkIndex(index);
+		boolean isAvailable(Position p) {
 			return true;
 		}
 
@@ -171,7 +133,7 @@ abstract class State implements Iterable<Position> {
 		}
 
 		@Override
-		public Iterator<Integer> indexIterator() {
+		public Iterator<Position> iterator() {
 			return new Availables();
 		}
 
@@ -192,8 +154,8 @@ abstract class State implements Iterable<Position> {
 		}
 
 		@Override
-		boolean isAvailable(int index) {
-			return !unavailable.get(checkIndex(index));
+		boolean isAvailable(Position p) {
+			return !unavailable.get(p.getIndex());
 		}
 
 		@Override
@@ -201,7 +163,7 @@ abstract class State implements Iterable<Position> {
 			return String.format("State[%s]", unavailable);
 		}
 
-		private final class Availables implements Iterator<Integer> {
+		private final class Availables implements Iterator<Position> {
 			/** Current index. */
 			private int current;
 
@@ -216,13 +178,13 @@ abstract class State implements Iterable<Position> {
 			}
 
 			@Override
-			public Integer next() {
+			public Position next() {
 				if (!hasNext()) {
 					throw new NoSuchElementException();
 				}
 				final int value = current;
 				current = unavailable.nextClearBit(current + 1);
-				return value;
+				return getSize().getPosition(value);
 			}
 		}
 

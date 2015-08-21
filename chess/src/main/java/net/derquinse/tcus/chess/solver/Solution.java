@@ -31,22 +31,22 @@ public final class Solution {
 	/** Board size. */
 	private final Size size;
 	/** Final positions. */
-	private final ImmutableMap<Integer, Piece> positions;
+	private final ImmutableMap<Position, Piece> positions;
 	/** Hash code (cached, as solutions are returned as a set). */
 	private final int hash;
 
 	/** Creates a new solution. */
-	static Solution of(Size size, Map<Integer, Piece> positions) {
+	static Solution of(Size size, Map<Position, Piece> positions) {
 		checkNotNull(size, "The board size must be provided");
 		checkNotNull(positions, "The finals positions must be provided");
 		checkArgument(!positions.isEmpty(), "Positions cannot be empty");
-		checkArgument(positions.keySet().stream().allMatch(p -> p >= 0 && p < size.getPositions()),
-				"Solution positions must be valid");
+		checkArgument(positions.keySet().stream().allMatch(p -> p.getSize().equals(size)),
+				"Solution positions must be of the provided size");
 		return new Solution(size, ImmutableMap.copyOf(positions));
 	}
 
 	/** Constructor. */
-	private Solution(Size size, ImmutableMap<Integer, Piece> positions) {
+	private Solution(Size size, ImmutableMap<Position, Piece> positions) {
 		this.size = size;
 		this.positions = positions;
 		this.hash = Objects.hash(size, positions);
@@ -58,7 +58,7 @@ public final class Solution {
 	}
 
 	/** Returns the final positions (immutable). */
-	public ImmutableMap<Integer, Piece> getPositions() {
+	public ImmutableMap<Position, Piece> getPositions() {
 		return positions;
 	}
 
@@ -83,9 +83,8 @@ public final class Solution {
 	 */
 	public StringBuilder draw(StringBuilder b) {
 		return size.draw(b, p -> {
-			int i = p.getIndex();
-			if (positions.containsKey(i)) {
-				return positions.get(i).getRepresentation();
+			if (positions.containsKey(p)) {
+				return positions.get(p).getRepresentation();
 			}
 			return null;
 		});

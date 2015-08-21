@@ -38,7 +38,7 @@ final class Step {
 	/** Current board state. */
 	private final State state;
 	/** Placed pieces positions. */
-	private final int[] positions;
+	private final Position[] positions;
 
 	/** Creates the inital step for a problem. */
 	static Step initial(Problem problem) {
@@ -52,7 +52,7 @@ final class Step {
 	private Step(ImmutableList<Piece> pieces, State state) {
 		this.pieces = pieces;
 		this.state = state;
-		this.positions = new int[0];
+		this.positions = new Position[0];
 	}
 
 	/** Constructor for incremental step. */
@@ -61,7 +61,7 @@ final class Step {
 		this.state = current.state.merge(s);
 		int n = current.positions.length;
 		this.positions = Arrays.copyOf(current.positions, n + 1);
-		this.positions[n] = p.getIndex();
+		this.positions[n] = p;
 	}
 
 	/** Returns whether this step represents a solution. */
@@ -75,11 +75,12 @@ final class Step {
 	 */
 	Solution getSolution() {
 		checkState(isSolution(), "Not a solution");
-		ImmutableMap.Builder<Integer, Piece> b = ImmutableMap.builder();
+		ImmutableMap.Builder<Position, Piece> b = ImmutableMap.builder();
+		final Size size = state.getSize();
 		for (int i = 0; i < pieces.size(); i++) {
 			b.put(positions[i], pieces.get(i));
 		}
-		return Solution.of(state.getSize(), b.build());
+		return Solution.of(size, b.build());
 	}
 
 	/**
@@ -128,10 +129,10 @@ final class Step {
 			}
 		} else {
 			final boolean samePiece = nextPiece.equals(getLastPiece());
-			final int lastPos = positions[positions.length-1];
+			final Position lastPos = positions[positions.length-1];
 			for (Position p : state) {
 				// Optimization: if two pieces are the same kind, only look forward
-				if (!samePiece || p.getIndex() > lastPos) {
+				if (!samePiece || p.compareTo(lastPos) > 0) {
 					final State pieceState = nextPiece.getState(p);
 					if (validState(pieceState)) {
 						final Step next = new Step(this, p, pieceState);
@@ -145,7 +146,7 @@ final class Step {
 
 	/** Checks that the provided state does not threaten any of the current step positions. */
 	private boolean validState(State s) {
-		for (int p : positions) {
+		for (Position p : positions) {
 			if (!s.isAvailable(p)) {
 				return false;
 			}

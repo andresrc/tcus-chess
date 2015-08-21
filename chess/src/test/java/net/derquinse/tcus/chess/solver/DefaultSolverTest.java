@@ -88,10 +88,10 @@ public final class DefaultSolverTest {
 		check(Problem.builder(Size.of(8, 8)).addPieces(Piece.QUEEN, 8), 92);
 	}
 
-	/** Challenge. */
-	//@Test
-	public void challenge() {
-		check(Problem.builder(Size.of(7, 7)).addPieces(Piece.KING, 2).addPieces(Piece.QUEEN, 2).addPieces(Piece.BISHOP, 2).addPieces(Piece.KNIGHT, 1), 1);
+	/** Simplified Challenge (1 more queen). */
+	@Test
+	public void simplifiedChallenge() {
+		check(Problem.builder(Size.of(7, 7)).addPieces(Piece.KING, 2).addPieces(Piece.QUEEN, 3).addPieces(Piece.BISHOP, 2).addPieces(Piece.KNIGHT, 1), 169464);
 	}
 	
 }
