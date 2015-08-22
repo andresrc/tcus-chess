@@ -89,7 +89,7 @@ final class DefaultSolver implements Solver {
 					@SuppressWarnings("unused")
 					final Future<Integer> id = tasks.take();
 					taken++;
-					//System.out.printf("Completed task (%d)\n", id.get());
+					// System.out.printf("Completed task (%d)\n", id.get());
 				}
 			} catch (Exception e) {
 				throw new RuntimeException(e);
@@ -110,7 +110,14 @@ final class DefaultSolver implements Solver {
 			public Integer call() throws Exception {
 				for (Step next : step.nextSteps()) {
 					if (next.isSolution()) {
-						solutions.add(next.getSolution());
+						final Solution s = next.getSolution();
+						solutions.add(s);
+						solutions.add(s.rotate180());
+						if (s.getSize().isSquare()) {
+							Solution s90 = s.rotate90();
+							solutions.add(s90);
+							solutions.add(s90.rotate180());
+						}
 					} else {
 						newTask(next);
 					}
