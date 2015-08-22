@@ -18,7 +18,8 @@ package net.derquinse.tcus.chess.solver;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.Set;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
@@ -27,8 +28,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
+import com.beust.jcommander.internal.Lists;
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
@@ -48,36 +49,60 @@ final class DefaultSolver implements Solver {
 	}
 
 	@Override
-	public Set<Solution> solve(Problem problem) {
+	public List<Solution> solveAndGet(Problem problem) {
+		final Search s = solve(problem, true);
+		if (s == null) {
+			return ImmutableList.of();
+		}
+		return s.solutions;
+	}
+
+	@Override
+	public int solve(Problem problem) {
+		final Search s = solve(problem, false);
+		if (s == null) {
+			return 0;
+		}
+		return s.solutionCount.get();
+	}
+	
+	private Search solve(Problem problem, boolean save) {
 		checkNotNull(problem, "The problem must be provided");
 		// Degenerate cases
 		final int n = problem.getPieces().size();
 		if (n == 0 || n > problem.getSize().getPositions()) {
-			return ImmutableSet.of();
+			return null;
 		}
 		final Step initial = Step.initial(problem);
-		final Search search = new Search();
+		final Search search = new Search(save);
 		search.newTask(initial);
 		search.await();
-		return ImmutableSet.copyOf(search.solutions);
+		return search;
 	}
+	
 
 	private final class Search {
+		/** Number of solutions. */
+		private final AtomicInteger solutionCount = new AtomicInteger(0);
 		/** Solutions so far. */
-		private final Set<Solution> solutions = Sets.newConcurrentHashSet();
+		private final List<Solution> solutions;
 		/** Completion service. */
 		private final CompletionService<Integer> tasks;
 		/** Task count. */
-		private final AtomicInteger count = new AtomicInteger();
+		private final AtomicInteger count = new AtomicInteger(0);
 
-		Search() {
+		Search(boolean save) {
 			this.tasks = new ExecutorCompletionService<Integer>(executor);
+			if (save) {
+				this.solutions = Collections.synchronizedList(Lists.newLinkedList());
+			} else {
+				this.solutions = null;
+			}
 		}
 
 		/** Generate a new task to process a non-final step. */
 		void newTask(final Step step) {
 			final Task task = new Task(step);
-			//System.out.printf("Submitted task (%d) : %s\n", task.id, step);
 			tasks.submit(task);
 		}
 
@@ -89,7 +114,6 @@ final class DefaultSolver implements Solver {
 					@SuppressWarnings("unused")
 					final Future<Integer> id = tasks.take();
 					taken++;
-					// System.out.printf("Completed task (%d)\n", id.get());
 				}
 			} catch (Exception e) {
 				throw new RuntimeException(e);
@@ -110,13 +134,10 @@ final class DefaultSolver implements Solver {
 			public Integer call() throws Exception {
 				for (Step next : step.nextSteps()) {
 					if (next.isSolution()) {
-						final Solution s = next.getSolution();
-						solutions.add(s);
-						solutions.add(s.rotate180());
-						if (s.getSize().isSquare()) {
-							Solution s90 = s.rotate90();
-							solutions.add(s90);
-							solutions.add(s90.rotate180());
+						solutionCount.incrementAndGet();
+						if (solutions != null) {
+							final Solution s = next.getSolution();
+							solutions.add(s);
 						}
 					} else {
 						newTask(next);

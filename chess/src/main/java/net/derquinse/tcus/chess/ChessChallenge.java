@@ -18,7 +18,7 @@ package net.derquinse.tcus.chess;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Set;
+import java.util.List;
 
 import net.derquinse.tcus.chess.solver.Piece;
 import net.derquinse.tcus.chess.solver.Problem;
@@ -35,6 +35,7 @@ import com.beust.jcommander.converters.FileConverter;
 import com.beust.jcommander.validators.PositiveInteger;
 import com.google.common.base.Charsets;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 
 /**
@@ -99,10 +100,18 @@ public final class ChessChallenge {
 						"Solving for %d king(s), %d queen(s), %d bishop(s), %d rook(s) and %d knight(s) in a %d row(s) by %d column(s) board\n",
 						kings, queens, bishops, rooks, knights, rows, columns);
 		final Solver solver = Solvers.defaultSolver(threads);
+		final int count;
+		final List<Solution> solutions;
 		final Stopwatch w = Stopwatch.createStarted();
-		final Set<Solution> solutions = solver.solve(p);
-		System.out.printf("Found % d solutions in %s using %d threads\n", solutions.size(), w, threads);
-		if (!solutions.isEmpty() && output != null) {
+		if (output != null) {
+			solutions = solver.solveAndGet(p);
+			count = solutions.size();
+		} else {
+			count = solver.solve(p);
+			solutions = ImmutableList.of();
+		}
+		System.out.printf("Found % d solutions in %s using %d threads\n", count, w, threads);
+		if (output != null && !solutions.isEmpty()) {
 			try (Writer writer = Files.newWriter(output, Charsets.UTF_8)) {
 				for (Solution s : solutions) {
 					s.draw(writer);

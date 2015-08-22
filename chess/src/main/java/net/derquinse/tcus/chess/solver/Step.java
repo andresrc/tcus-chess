@@ -122,26 +122,18 @@ final class Step {
 		final Piece nextPiece = getNextPiece();
 		// Initial state
 		if (positions.length == 0) {
-			// All positions are available, but we only one those in the symmetry subset.
+			// All positions are available.
 			for (Position p : state) {
-				if (p.isSymmetrySubset()) {
-					final State pieceState = nextPiece.getState(p);
-					steps.add(new Step(this, p, pieceState));
-				}
+				final State pieceState = nextPiece.getState(p);
+				steps.add(new Step(this, p, pieceState));
 			}
 		} else {
 			final int placed = positions.length; // pieces placed so far
 			final boolean samePiece = nextPiece.equals(getLastPiece());
 			final Position lastPos = positions[placed-1];
 			for (Position p : state) {
-				// Optimization: if two pieces are the same kind, only look forward
-				// If we are in the second step, we must take care of the symmetry subset.
-				//boolean skip = placed > 1 && samePiece && p.compareTo(lastPos) > 0;;
-				boolean skip = samePiece && p.compareTo(lastPos) > 0;
-				if (skip && placed == 1) {
-					skip = p.isSymmetrySubset();
-				}
-				if (!skip) {
+				// If two pieces are the same kind, only look forward
+				if (!samePiece || p.compareTo(lastPos) > 0) {
 					final State pieceState = nextPiece.getState(p);
 					if (validState(pieceState)) {
 						final Step next = new Step(this, p, pieceState);

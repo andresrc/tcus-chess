@@ -15,7 +15,7 @@
  */
 package net.derquinse.tcus.chess.solver;
 
-import java.util.Set;
+import java.util.List;
 
 /**
  * Interface for a challenge solver.
@@ -25,7 +25,15 @@ public interface Solver {
 	/**
 	 * Solves a problem
 	 * @param problem Problem to solve.
+	 * @return The number of found solutions.
+	 */
+	int solve(Problem problem);
+
+	/**
+	 * Solves a problem, returning the found solution.
+	 * @param problem Problem to solve.
 	 * @return The set of found solutions.
 	 */
-	Set<Solution> solve(Problem problem);
+	List<Solution> solveAndGet(Problem problem);
+
 }

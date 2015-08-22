@@ -17,7 +17,7 @@ package net.derquinse.tcus.chess.solver;
 
 import static org.testng.Assert.assertEquals;
 
-import java.util.Set;
+import java.util.List;
 
 import org.testng.annotations.Test;
 
@@ -28,14 +28,24 @@ import org.testng.annotations.Test;
 public final class DefaultSolverTest {
 	private final DefaultSolver solver = new DefaultSolver(2);
 
-	private Set<Solution> check(Problem p, int expectedSolutions) {
-		Set<Solution> solutions = solver.solve(p);
+	private int check(Problem p, int expectedSolutions) {
+		int solutions = solver.solve(p);
+		assertEquals(solutions, expectedSolutions);
+		return solutions;
+	}
+
+	private int check(Problem.Builder b, int expectedSolutions) {
+		return check(b.build(), expectedSolutions);
+	}
+
+	private List<Solution> checkAndGet(Problem p, int expectedSolutions) {
+		List<Solution> solutions = solver.solveAndGet(p);
 		assertEquals(solutions.size(), expectedSolutions);
 		return solutions;
 	}
 
-	private Set<Solution> check(Problem.Builder b, int expectedSolutions) {
-		return check(b.build(), expectedSolutions);
+	private List<Solution> checkAndGet(Problem.Builder b, int expectedSolutions) {
+		return checkAndGet(b.build(), expectedSolutions);
 	}
 
 	/** Base case. */
@@ -47,7 +57,7 @@ public final class DefaultSolverTest {
 	/** Example 1. */
 	@Test
 	public void example1() {
-		for(Solution s: check(Problem.builder(Size.of(3, 3)).addPieces(Piece.KING, 2).addPieces(Piece.ROOK, 1), 4)) {
+		for (Solution s : checkAndGet(Problem.builder(Size.of(3, 3)).addPieces(Piece.KING, 2).addPieces(Piece.ROOK, 1), 4)) {
 			System.out.println(s.draw());
 		}
 	}
@@ -55,28 +65,27 @@ public final class DefaultSolverTest {
 	/** Example 2. */
 	@Test
 	public void example2() {
-		for(Solution s: check(Problem.builder(Size.of(4, 4)).addPieces(Piece.KNIGHT, 4).addPieces(Piece.ROOK, 2), 8)) {
+		for (Solution s : checkAndGet(Problem.builder(Size.of(4, 4)).addPieces(Piece.KNIGHT, 4).addPieces(Piece.ROOK, 2), 8)) {
 			System.out.println(s.draw());
 		}
 	}
-	
+
 	/** Empty. */
 	@Test
 	public void empty() {
 		check(Problem.builder(Size.of(15, 15)), 0);
 	}
-	
-	
+
 	/** One piece. */
 	@Test
 	public void onePiece() {
 		check(Problem.builder(Size.of(8, 8)).addPieces(Piece.QUEEN, 1), 64);
 	}
-	
+
 	private void queens(int n, int sols) {
 		check(Problem.builder(Size.of(n, n)).addPieces(Piece.QUEEN, n), sols);
 	}
-	
+
 	/** Four queens. */
 	@Test
 	public void fourQueens() {
@@ -94,7 +103,7 @@ public final class DefaultSolverTest {
 	public void sixQueens() {
 		queens(6, 4);
 	}
-	
+
 	/** Eight queens. */
 	@Test
 	public void eightQueens() {
@@ -104,7 +113,15 @@ public final class DefaultSolverTest {
 	/** Simplified Challenge (1 more queen). */
 	@Test
 	public void simplifiedChallenge() {
-		check(Problem.builder(Size.of(7, 7)).addPieces(Piece.KING, 2).addPieces(Piece.QUEEN, 3).addPieces(Piece.BISHOP, 2).addPieces(Piece.KNIGHT, 1), 169464);
+		check(Problem.builder(Size.of(7, 7)).addPieces(Piece.KING, 2).addPieces(Piece.QUEEN, 3).addPieces(Piece.BISHOP, 2)
+				.addPieces(Piece.KNIGHT, 1), 169464);
+	}
+
+	/** Challenge. */
+	@Test
+	public void challenge() {
+		check(Problem.builder(Size.of(7, 7)).addPieces(Piece.KING, 2).addPieces(Piece.QUEEN, 2).addPieces(Piece.BISHOP, 2)
+				.addPieces(Piece.KNIGHT, 1), 3063828);
 	}
 	
 }
