@@ -79,6 +79,7 @@ public final class ChessChallenge {
 		final ChessChallenge challenge = new ChessChallenge();
 		try {
 			final JCommander jc = new JCommander(challenge, args);
+			jc.setProgramName("ChessChallenge");
 			if (args.length == 0) {
 				jc.usage();
 			} else {
@@ -95,7 +96,7 @@ public final class ChessChallenge {
 				.addPieces(Piece.KNIGHT, knights).build();
 		System.out
 				.printf(
-						"Solving for %d king(s), %d queen(s), %d bishop(s), %d rook(s) and %d knight(s) in a %d row(s) for %d column(s) board\n",
+						"Solving for %d king(s), %d queen(s), %d bishop(s), %d rook(s) and %d knight(s) in a %d row(s) by %d column(s) board\n",
 						kings, queens, bishops, rooks, knights, rows, columns);
 		final Solver solver = Solvers.defaultSolver(threads);
 		final Stopwatch w = Stopwatch.createStarted();
