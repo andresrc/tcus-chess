@@ -72,33 +72,6 @@ public final class Position implements Comparable<Position> {
 		return column;
 	}
 
-	/** Returns wheter the position is in the symmetry subset for the first step. */
-	boolean isSymmetrySubset() {
-		final int rows = size.getRows();
-		final int m = rows / 2 + rows % 2;
-		if (size.isSquare()) {
-			return row < m && column < m;
-		} else {
-			return row < m;
-		}
-	}
-
-	/**
-	 * Gets the position as is the board rotated 90deg clockwise.
-	 * @throws IllegalStateException if the board is not a square.
-	 */
-	public Position rotate90() {
-		size.checkSquare();
-		return new Position(size, column, size.getColumns() - 1 - row);
-	}
-
-	/**
-	 * Gets the position as is the board rotated 180deg clockwise.
-	 */
-	public Position rotate180() {
-		return new Position(size, size.getRows() - 1 - row, size.getColumns() - 1 - column);
-	}
-
 	/** Creates a state builder based on the current position. */
 	StateBuilder builder() {
 		return new StateBuilder();

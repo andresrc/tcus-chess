@@ -26,7 +26,7 @@ import org.testng.annotations.Test;
  * @author Andres Rodriguez
  */
 public final class DefaultSolverTest {
-	private final DefaultSolver solver = new DefaultSolver(2);
+	private final DefaultSolver solver = new DefaultSolver(1);
 
 	private int check(Problem p, int expectedSolutions) {
 		int solutions = solver.solve(p);

@@ -110,7 +110,7 @@ public final class ChessChallenge {
 			count = solver.solve(p);
 			solutions = ImmutableList.of();
 		}
-		System.out.printf("Found % d solutions in %s using %d threads\n", count, w, threads);
+		System.out.printf("Found % d solutions in %s using %d thread(s)\n", count, w, threads);
 		if (output != null && !solutions.isEmpty()) {
 			try (Writer writer = Files.newWriter(output, Charsets.UTF_8)) {
 				for (Solution s : solutions) {

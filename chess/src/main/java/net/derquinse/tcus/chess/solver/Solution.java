@@ -20,9 +20,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.function.UnaryOperator;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -35,7 +33,7 @@ public final class Solution {
 	private final Size size;
 	/** Final positions. */
 	private final ImmutableMap<Position, Piece> positions;
-	/** Hash code (cached, as solutions are returned as a set). */
+	/** Hash code (cached). */
 	private final int hash;
 
 	/** Creates a new solution. */
@@ -63,30 +61,6 @@ public final class Solution {
 	/** Returns the final positions (immutable). */
 	public ImmutableMap<Position, Piece> getPositions() {
 		return positions;
-	}
-
-	/** Transform a solution. */
-	private Solution transform(UnaryOperator<Position> f) {
-		final ImmutableMap.Builder<Position, Piece> b = ImmutableMap.builder();
-		for (Entry<Position, Piece> entry : positions.entrySet()) {
-			b.put(f.apply(entry.getKey()), entry.getValue());
-		}
-		return new Solution(size, b.build());
-	}
-
-	/**
-	 * Rotates a solution 90 deg.
-	 * @throws IllegalStateException if the board is not a square.
-	 */
-	public Solution rotate90() {
-		size.checkSquare();
-		return transform(p -> p.rotate90());
-	}
-
-	/** Rotates a solution 180 deg. */
-	public Solution rotate180() {
-		size.checkSquare();
-		return transform(p -> p.rotate180());
 	}
 
 	@Override

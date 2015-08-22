@@ -105,30 +105,4 @@ public final class SizeTest {
 		}
 	}
 
-	/** Rotation (square). */
-	@Test
-	public void rotationSquare() {
-		final Size size = Size.of(4, 4);
-		assertEquals(size.getPosition(1, 1).rotate90(), size.getPosition(1, 2));
-		assertEquals(size.getPosition(2, 1).rotate90(), size.getPosition(1, 1));
-		assertEquals(size.getPosition(1, 1).rotate180(), size.getPosition(2, 2));
-		assertEquals(size.getPosition(1, 1).rotate90().rotate90(), size.getPosition(1, 1).rotate180());
-		assertEquals(size.getPosition(2, 1).rotate180().rotate180(), size.getPosition(2, 1));
-		assertEquals(size.getPosition(2, 3).rotate90().rotate180().rotate90(), size.getPosition(2, 3));
-	}
-
-	/** Invalid rotation. */
-	@Test(expectedExceptions = IllegalArgumentException.class)
-	public void invalidRotation() {
-		Size.of(3, 5).getPosition(1, 2).rotate90();
-	}
-
-	/** Rotation (rectangular). */
-	@Test
-	public void rotationRect() {
-		final Size size = Size.of(4, 5);
-		assertEquals(size.getPosition(2, 3).rotate180(), size.getPosition(1, 1));
-		assertEquals(size.getPosition(1, 1).rotate180(), size.getPosition(2, 3));
-	}
-	
 }
