@@ -18,7 +18,6 @@ package net.derquinse.tcus.chess.solver;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
@@ -27,6 +26,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.beust.jcommander.internal.Lists;
 import com.google.common.collect.ImmutableList;
@@ -54,7 +55,7 @@ final class DefaultSolver implements Solver {
 		if (s == null) {
 			return ImmutableList.of();
 		}
-		return s.solutions;
+		return s.getSolutions();
 	}
 
 	@Override
@@ -63,9 +64,9 @@ final class DefaultSolver implements Solver {
 		if (s == null) {
 			return 0;
 		}
-		return s.solutionCount.get();
+		return s.getCount();
 	}
-	
+
 	private Search solve(Problem problem, boolean save) {
 		checkNotNull(problem, "The problem must be provided");
 		// Degenerate cases
@@ -79,13 +80,12 @@ final class DefaultSolver implements Solver {
 		search.await();
 		return search;
 	}
-	
 
 	private final class Search {
-		/** Number of solutions. */
-		private final AtomicInteger solutionCount = new AtomicInteger(0);
-		/** Solutions so far. */
-		private final List<Solution> solutions;
+		/** Solution count. */
+		private final GlobalCounter counter = new GlobalCounter();
+		/** Solution aggregator. */
+		private final GlobalAggregator solutions;
 		/** Completion service. */
 		private final CompletionService<Integer> tasks;
 		/** Task count. */
@@ -93,11 +93,7 @@ final class DefaultSolver implements Solver {
 
 		Search(boolean save) {
 			this.tasks = new ExecutorCompletionService<Integer>(executor);
-			if (save) {
-				this.solutions = Collections.synchronizedList(Lists.newLinkedList());
-			} else {
-				this.solutions = null;
-			}
+			this.solutions = save ? new GlobalAggregator() : null;
 		}
 
 		/** Generate a new task to process a non-final step. */
@@ -120,6 +116,16 @@ final class DefaultSolver implements Solver {
 			}
 		}
 
+		/** Returns the solution count. */
+		int getCount() {
+			return counter.getCount();
+		}
+
+		/** Returns the solution through a method that safely publishes the mutable list. */
+		List<Solution> getSolutions() {
+			return solutions != null ? solutions.getSolutions() : ImmutableList.of();
+		}
+
 		private final class Task implements Callable<Integer> {
 			/** Task id. */
 			private final int id = count.incrementAndGet();
@@ -132,18 +138,56 @@ final class DefaultSolver implements Solver {
 
 			@Override
 			public Integer call() throws Exception {
-				for (Step next : step.nextSteps()) {
-					if (next.isSolution()) {
-						solutionCount.incrementAndGet();
-						if (solutions != null) {
-							final Solution s = next.getSolution();
-							solutions.add(s);
-						}
-					} else {
-						newTask(next);
-					}
+				for (Step next : step.nextSteps(counter, solutions)) {
+					newTask(next);
 				}
 				return id;
+			}
+		}
+	}
+
+	/** Global solution count consumer. */
+	private static final class GlobalCounter implements SolutionCounter {
+		private final AtomicInteger count = new AtomicInteger(0);
+
+		@Override
+		public void accept(Integer t) {
+			count.addAndGet(t);
+		}
+
+		@Override
+		public int getCount() {
+			return count.get();
+		}
+	}
+
+	/** Global solution aggregator. */
+	private static final class GlobalAggregator implements SolutionAggregator {
+		/** Solutions so far. */
+		private final List<Solution> solutions = Lists.newLinkedList();
+		/** Solutions list lock. */
+		private final Lock lock = new ReentrantLock();
+
+		@Override
+		public void accept(List<Solution> list) {
+			if (list != null && !list.isEmpty()) {
+				lock.lock();
+				try {
+					solutions.addAll(list);
+				} finally {
+					lock.unlock();
+				}
+			}
+		}
+
+		/** Returns the solution list, safely published through the same lock. */
+		@Override
+		public List<Solution> getSolutions() {
+			lock.lock();
+			try {
+				return solutions;
+			} finally {
+				lock.unlock();
 			}
 		}
 

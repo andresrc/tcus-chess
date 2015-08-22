@@ -16,7 +16,6 @@
 package net.derquinse.tcus.chess.solver;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -65,16 +64,14 @@ final class Step {
 	}
 
 	/** Returns whether this step represents a solution. */
-	boolean isSolution() {
+	private boolean isSolution() {
 		return positions.length == pieces.size();
 	}
 
 	/**
-	 * Returns the solution represented by this step.
-	 * @throws IllegalStateException if the step is not a solution.
+	 * Returns the solution represented by this step. Assumes it is a solution.
 	 */
-	Solution getSolution() {
-		checkState(isSolution(), "Not a solution");
+	private Solution getSolution() {
 		ImmutableMap.Builder<Position, Piece> b = ImmutableMap.builder();
 		final Size size = state.getSize();
 		for (int i = 0; i < pieces.size(); i++) {
@@ -85,32 +82,32 @@ final class Step {
 
 	/**
 	 * Returns the last piece placed on the board.
-	 * @throws IllegalStateException if the step is an initial step.
 	 */
 	private Piece getLastPiece() {
-		checkState(positions.length > 0, "Initial state");
 		return pieces.get(positions.length - 1);
 	}
 
 	/**
 	 * Returns the piece to be used for the next step in the search.
-	 * @throws IllegalStateException if the step is a solution.
 	 */
 	private Piece getNextPiece() {
-		checkState(!isSolution(), "Already a solution");
 		return pieces.get(positions.length);
 	}
 
 	/**
 	 * Computes the next steps in the search.
-	 * @param index Available index to use in the next step.
-	 * @return The next steps to search (which may be solutions). Empty if the search through this
-	 *         path must end.
+	 * @param counter Solution counter.
+	 * @param aggregator Solution aggregator (may be {@code null}).
+	 * @return The next steps to search. Empty if the search through this path must end.
 	 * @throws IllegalStateException if the step is a solution.
 	 */
-	List<Step> nextSteps() {
+	List<Step> nextSteps(SolutionCounter counter, SolutionAggregator aggregator) {
 		if (isSolution()) {
-			return ImmutableList.of(this);
+			counter.accept(1);
+			if (aggregator != null) {
+				aggregator.accept(ImmutableList.of(getSolution()));
+			}
+			return ImmutableList.of();
 		}
 		// Available positions
 		final int n = state.getAvailablePositions();
@@ -118,31 +115,52 @@ final class Step {
 			// No room left for remaining pieces
 			return ImmutableList.of();
 		}
-		final List<Step> steps = Lists.newLinkedList();
-		final Piece nextPiece = getNextPiece();
 		// Initial state
 		if (positions.length == 0) {
+			final Piece nextPiece = getNextPiece();
+			final List<Step> steps = Lists.newArrayListWithCapacity(n);
 			// All positions are available.
 			for (Position p : state) {
 				final State pieceState = nextPiece.getState(p);
 				steps.add(new Step(this, p, pieceState));
 			}
+			return steps;
 		} else {
-			final int placed = positions.length; // pieces placed so far
-			final boolean samePiece = nextPiece.equals(getLastPiece());
-			final Position lastPos = positions[placed-1];
-			for (Position p : state) {
-				// If two pieces are the same kind, only look forward
-				if (!samePiece || p.compareTo(lastPos) > 0) {
-					final State pieceState = nextPiece.getState(p);
-					if (validState(pieceState)) {
-						final Step next = new Step(this, p, pieceState);
-						steps.addAll(next.nextSteps());
-					}
+			// Only one piece placed
+			final List<Solution> solutions = aggregator != null ? Lists.newLinkedList() : null;
+			final int count = recurse(solutions);
+			// Aggregate into global
+			counter.accept(count);
+			if (aggregator != null) {
+				aggregator.accept(solutions);
+			}
+			return ImmutableList.of();
+		}
+	}
+
+	private int recurse(List<Solution> solutions) {
+		if (isSolution()) {
+			if (solutions != null) {
+				solutions.add(getSolution());
+			}
+			return 1;
+		}
+		final Piece nextPiece = getNextPiece();
+		final boolean samePiece = nextPiece.equals(getLastPiece());
+		final Position lastPos = positions[positions.length - 1];
+		int count = 0;
+		for (Position p : state) {
+			// If two pieces are the same kind, only look forward
+			if (!samePiece || p.compareTo(lastPos) > 0) {
+				final State pieceState = nextPiece.getState(p);
+				if (validState(pieceState)) {
+					final Step next = new Step(this, p, pieceState);
+					// Recurse
+					count += next.recurse(solutions);
 				}
 			}
 		}
-		return steps;
+		return count;
 	}
 
 	/** Checks that the provided state does not threaten any of the current step positions. */
@@ -160,5 +178,4 @@ final class Step {
 		return String.format("Step[%s]%s[%s]", state, Arrays.toString(positions),
 				pieces.subList(positions.length, pieces.size()));
 	}
-
 }
