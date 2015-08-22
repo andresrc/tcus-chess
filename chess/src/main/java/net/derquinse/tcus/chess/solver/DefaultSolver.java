@@ -44,7 +44,7 @@ final class DefaultSolver implements Solver {
 		checkArgument(numThreads > 0, "The number of threads must be at least 1");
 		// As we don't provide a way to stop the solver and we wait for the solutions, we use daemon
 		// threads.
-		this.executor = Executors.newFixedThreadPool(numThreads, new ThreadFactoryBuilder().setDaemon(false).build());
+		this.executor = Executors.newFixedThreadPool(numThreads, new ThreadFactoryBuilder().setDaemon(true).build());
 	}
 
 	@Override
