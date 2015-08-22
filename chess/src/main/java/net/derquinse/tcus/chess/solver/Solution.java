@@ -18,6 +18,7 @@ package net.derquinse.tcus.chess.solver;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -104,10 +105,10 @@ public final class Solution {
 
 	/**
 	 * Draws a board containing a solution.
-	 * @param b Builder to add the drawing to.
+	 * @param a Drawing destination.
 	 * @return The provided builder for method chaining.
 	 */
-	public StringBuilder draw(StringBuilder b) {
+	public Appendable draw(Appendable b) throws IOException {
 		return size.draw(b, p -> {
 			if (positions.containsKey(p)) {
 				return positions.get(p).getRepresentation();
@@ -120,7 +121,12 @@ public final class Solution {
 	 * Draws a board containing a solution.
 	 */
 	public String draw() {
-		return draw(new StringBuilder()).toString();
+		try {
+			return draw(new StringBuilder()).toString();
+		} catch (IOException e) {
+			// Should not happen
+			throw new RuntimeException(e);
+		}
 	}
 
 }

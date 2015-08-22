@@ -17,6 +17,7 @@ package net.derquinse.tcus.chess.solver;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
@@ -53,7 +54,7 @@ public final class Size implements Iterable<Position> {
 	public boolean isSquare() {
 		return rows == columns;
 	}
-	
+
 	/**
 	 * Ensures the size is a square.
 	 * @throws IllegalStateException if the board is not a square.
@@ -158,23 +159,23 @@ public final class Size implements Iterable<Position> {
 
 	/**
 	 * Draws a board
-	 * @param b Builder to add the drawing to.
+	 * @param a Drawing destination.
 	 * @param contents Board contents.
 	 * @return The provided builder for method chaining.
 	 */
-	public StringBuilder draw(StringBuilder b, Function<Position, Character> contents) {
+	public Appendable draw(Appendable a, Function<Position, Character> contents) throws IOException {
 		final String line = getRowLine();
-		b.append(line);
+		a.append(line);
 		for (int r = 0; r < rows; r++) {
-			b.append('|');
+			a.append('|');
 			for (int c = 0; c < columns; c++) {
 				final Position p = getPosition(r, c);
 				final char ch = MoreObjects.firstNonNull(contents.apply(p), ' ');
-				b.append(ch).append('|');
+				a.append(ch).append('|');
 			}
-			b.append('\n').append(line);
+			a.append('\n').append(line);
 		}
-		return b;
+		return a;
 	}
 
 	/**
@@ -182,7 +183,12 @@ public final class Size implements Iterable<Position> {
 	 * @param contents Board contents.
 	 */
 	public String draw(Function<Position, Character> contents) {
-		return draw(new StringBuilder(), contents).toString();
+		try {
+			return draw(new StringBuilder(), contents).toString();
+		} catch (IOException e) {
+			// Should not happen
+			throw new RuntimeException(e);
+		}
 	}
 
 	private String getRowLine() {
