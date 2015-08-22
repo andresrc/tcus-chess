@@ -72,6 +72,22 @@ public final class Position implements Comparable<Position> {
 		return column;
 	}
 
+	/**
+	 * Gets the position as is the board rotated 90deg clockwise.
+	 * @throws IllegalStateException if the board is not a square.
+	 */
+	public Position rotate90() {
+		size.checkSquare();
+		return new Position(size, column, size.getColumns() - 1 - row);
+	}
+
+	/**
+	 * Gets the position as is the board rotated 180deg clockwise.
+	 */
+	public Position rotate180() {
+		return new Position(size, size.getRows() - 1 - row, size.getColumns() - 1 - column);
+	}
+
 	/** Creates a state builder based on the current position. */
 	StateBuilder builder() {
 		return new StateBuilder();

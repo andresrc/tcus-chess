@@ -60,6 +60,19 @@ public final class DefaultSolverTest {
 		}
 	}
 	
+	/** Empty. */
+	@Test
+	public void empty() {
+		check(Problem.builder(Size.of(15, 15)), 0);
+	}
+	
+	
+	/** One piece. */
+	@Test
+	public void onePiece() {
+		check(Problem.builder(Size.of(8, 8)).addPieces(Piece.QUEEN, 1), 64);
+	}
+	
 	private void queens(int n, int sols) {
 		check(Problem.builder(Size.of(n, n)).addPieces(Piece.QUEEN, n), sols);
 	}

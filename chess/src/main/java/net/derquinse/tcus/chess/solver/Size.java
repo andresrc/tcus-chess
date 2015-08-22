@@ -49,6 +49,19 @@ public final class Size implements Iterable<Position> {
 		this.positions = rows * columns;
 	}
 
+	/** Returns whether the board is a square. */
+	public boolean isSquare() {
+		return rows == columns;
+	}
+	
+	/**
+	 * Ensures the size is a square.
+	 * @throws IllegalStateException if the board is not a square.
+	 */
+	void checkSquare() {
+		checkArgument(isSquare(), "The board must be a square");
+	}
+
 	/** Returns the number of rows. */
 	public int getRows() {
 		return rows;
