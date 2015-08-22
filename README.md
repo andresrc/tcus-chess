@@ -4,16 +4,16 @@ This repository contains a Java solution to the Chess Challenge as described in 
 Some aspects of the solution may seem over-engineered given the size of the problem, but as required in the challenge description, the solution tries to illustrate the use of best practices.
 Design considerations:
 - The solution is based on depth-first search with backtracking. Some experiments were done using breadth-first but provided no improvement and the "visited-set" supposed a memory burden.
-  - In each step the problem is constrained with the positions threatened by the already places figures. A bitset is used to represent board state.
+  - In each step the problem is constrained with the positions threatened by the already placed figures. A bitset is used to represent board state.
   - Pieces are ordered by kind, placing first those that would provide greater constraints, in order to identify sooner impossible paths.
   - When two pieces of the same kind are placed paths followed by the first are avoided in the second.
-  - When there are less available positions than pieces to place tha path is eagerly abandoned.
-- The solution is approached using immutable objects in order to simplify analysis of parallelizable solutions. The presented solution distributes the work on the first level of the DFS. For a 7x7 or 8x8 board the search is distributed in 16 tasks.
-- A symmetry reduction was tried: in square boards, only a quarted of the board is considered for the first placement (in rectangular boards, a half). the rest of solutions are obtained applying rotations. The problem with this approach is that it requires keeping track of solutions to identify duplicates, which (see below) was a big performance hit.
+  - When there are less available positions than pieces to place that path is eagerly abandoned.
+- The solution is approached using immutable objects in order to simplify analysis of parallelizable solutions. The presented solution distributes the work on the first level of the DFS.
+- A symmetry reduction was tried: in square boards, only a quarted of the board is considered for the first placement (in rectangular boards, a half). The rest of solutions are obtained applying rotations. The problem with this approach is that it requires keeping track of solutions to identify duplicates, which (see below) was a big performance hit.
 
 The solution is structured in a package provided a very simple public API (`net.derquinse.tcus.chess.solver`, see interface `Solver`) and a command line application that is a client of this API. The provided solver is parametrized by the number of threads to use in finding the solution.
 
-First versions always kept track of found solutions, in order to be able to show them, but it was a big performance hit for big number of solutions, so it was made optional, providing two methods, one returning the found solutions and the other only the number.
+First versions always kept track of found solutions, in order to be able to show them, but it was a big performance hit for large number of solutions, so it was made optional, providing two methods, one returning the found solutions and the other only the number.
 
 The command line application reads the problem description from the command line arguments, builds a `Problem` object, feeds it to a solver (that uses a number of threads already specified in the command line) and obtains the `Solution`'s. If an output file is requested, the solve method returning all the solutions is used and they are written to an output file.
 
